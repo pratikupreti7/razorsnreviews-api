@@ -112,14 +112,44 @@ router.delete('/:id', verify, async (req, res) => {
 /*
  ************* GET: ALL SALONS **********************
  */
+// router.get('/', async (req, res) => {
+//   try {
+//     const salons = await Salon.find()
+//     res.json(salons)
+//   } catch (error) {
+//     res.status(500).json({ message: error.message })
+//   }
+// })
+
 router.get('/', async (req, res) => {
   try {
-    const salons = await Salon.find()
-    res.json(salons)
+    const page = parseInt(req.query.page)
+    const limit = parseInt(req.query.limit)
+    const startIndex = (page - 1) * limit
+    const endIndex = page * limit
+
+    const results = {}
+
+    if (endIndex < await Salon.countDocuments().exec()) {
+      results.next = {
+        page: page + 1,
+        limit: limit,
+      }
+    }
+    
+    if (startIndex > 0) {
+      results.previous = {
+        page: page - 1,
+        limit: limit,
+      }
+    }
+    results.results = await Salon.find().limit(limit).skip(startIndex).exec()
+    res.json(results)
   } catch (error) {
     res.status(500).json({ message: error.message })
   }
 })
+
 
 /*
  ************* GET: Single SALONS BY ID **********************
