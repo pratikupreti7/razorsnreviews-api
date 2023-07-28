@@ -5,6 +5,7 @@ const express = require('express')
 const mongoose = require('mongoose')
 const app = express()
 const path = require('path')
+
 /*
  ************* Environment variable **********************
  */
@@ -33,6 +34,17 @@ mongoose
  ************* Middleware **********************
  */
 app.use(express.json())
+const corsOptions = [
+  'https://razorsnreviews.onrender.com',
+  'http://localhost:3000',
+  'http://localhost:3003',
+] // Replace this with your frontend URL
+
+app.use(
+  cors({
+    origin: corsOptions,
+  }),
+)
 
 app.use('/api/user', userRoute)
 app.use('/api/salon', salonRoute)
@@ -41,17 +53,7 @@ app.use('/api/reviews', reviewRoute)
 /*
  ************* Deployment **********************
  */
-__dirname = path.resolve()
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '/frontend/build')))
-  app.get('*', (req, res) => {
-    res.sendFile(path.resolve(__dirname, '/frontend', '/build', '/index.html'))
-  })
-} else {
-  app.get('/', (req, res) => {
-    res.send('Api is running')
-  })
-}
+
 /*
  ************* Server **********************
  */
