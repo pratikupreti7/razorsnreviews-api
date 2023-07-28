@@ -53,7 +53,22 @@ app.use('/api/reviews', reviewRoute)
 /*
  ************* Deployment **********************
  */
+// https://razorsnreviews.onrender.com/
 
+// Set the correct path to the frontend build folder
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'build', 'index.html'))
+})
+
+/*
+ ************* Catch-all route for client-side routing **********************
+ */
+const publicPath = path.join(__dirname, 'path-to-your-build-folder') // Replace 'path-to-your-build-folder' with the correct path to your client-side build folder
+app.use(express.static(publicPath))
+
+app.get('*', (req, res) => {
+  res.sendFile(path.join(publicPath, 'index.html'))
+})
 /*
  ************* Server **********************
  */
