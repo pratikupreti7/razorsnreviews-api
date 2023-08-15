@@ -143,9 +143,13 @@ router.post('/updatepic', verifyToken, async (req, res) => {
     // Update user's profile picture (pic) with the Cloudinary ID
     user.pic = cloudinaryId
     await user.save()
+    const token = jwt.sign({ _id: user._id }, process.env.TOKEN_SECRET)
 
     // Return the updated user object without the password
     const userObj = user.toObject()
+    // Add token property to user object
+    userObj.token = token
+
     delete userObj.password
 
     res.send(userObj)
@@ -190,9 +194,12 @@ router.post('/updateinfo', verifyToken, async (req, res) => {
       user.password = hashedPassword
     }
     await user.save()
+    const token = jwt.sign({ _id: user._id }, process.env.TOKEN_SECRET)
 
     // Return the updated user object without the password
     const userObj = user.toObject()
+    // Add token property to user object
+    userObj.token = token
     delete userObj.password
 
     res.send(userObj)
