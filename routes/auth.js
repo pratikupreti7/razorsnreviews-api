@@ -68,8 +68,8 @@ router.post('/register', async (req, res) => {
 
     // Add token property to user object
     userObj.token = token
-    const savedUser = await userObj.save()
-    res.send(savedUser)
+    // const savedUser = await user.save()
+    res.header('auth-token', token).send(userObj)
   } catch (error) {
     return res
       .status(400)
