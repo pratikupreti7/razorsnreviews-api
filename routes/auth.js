@@ -62,7 +62,13 @@ router.post('/register', async (req, res) => {
     /*
      ************* Save new User **********************
      */
-    const savedUser = await user.save()
+    const token = jwt.sign({ _id: user._id }, process.env.TOKEN_SECRET)
+    // Convert user document to a plain JavaScript object
+    let userObj = user.toObject()
+
+    // Add token property to user object
+    userObj.token = token
+    const savedUser = await userObj.save()
     res.send(savedUser)
   } catch (error) {
     return res
@@ -182,6 +188,11 @@ router.post('/updateinfo', verifyToken, async (req, res) => {
     }
     // Only update email and password if provided
     if (email) {
+      // Check if email is already in use by another user
+      const existingUser = await User.findOne({ email, _id: { $ne: userId } })
+      if (existingUser) {
+        return res.status(400).send('Email is already in use')
+      }
       user.email = email
     }
     if (currentpassword && newpassword) {
