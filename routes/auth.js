@@ -18,6 +18,7 @@ const {
   authSchemaSignUp,
   authSchemaLogin,
 } = require('../validation/userSchemaValidation')
+const verifyToken = require('./verifyToken')
 
 /*
  ************* Register **********************
@@ -120,6 +121,83 @@ router.post('/login', async (req, res) => {
     return res
       .status(400)
       .send(error.details ? error.details[0].message : error.message)
+  }
+})
+router.post('/updatepic', verifyToken, async (req, res) => {
+  try {
+    const { userId, cloudinaryId } = req.body
+    // get user ID from the verified token
+    const userIdfromToken = req.user._id
+
+    if (userIdfromToken !== userId) {
+      return res.status(400).send('Forbidden request')
+    }
+
+    // Fetch the user by userId
+    const user = await User.findById(userId)
+
+    if (!user) {
+      return res.status(404).send('User not found')
+    }
+
+    // Update user's profile picture (pic) with the Cloudinary ID
+    user.pic = cloudinaryId
+    await user.save()
+
+    // Return the updated user object without the password
+    const userObj = user.toObject()
+    delete userObj.password
+
+    res.send(userObj)
+  } catch (error) {
+    return res.status(400).send(error.message)
+  }
+})
+
+router.post('/updateinfo', verifyToken, async (req, res) => {
+  try {
+    const { userId, name, email, currentpassword, newpassword } = req.body
+
+    // get user ID from the verified token
+    const userIdfromToken = req.user._id
+
+    if (userIdfromToken !== userId) {
+      return res.status(400).send('Forbidden request')
+    }
+
+    // Fetch the user by userId
+    const user = await User.findById(userId)
+
+    if (!user) {
+      return res.status(404).send('User not found')
+    }
+
+    // Update user's info
+    if (name) {
+      user.name = name
+    }
+    // Only update email and password if provided
+    if (email) {
+      user.email = email
+    }
+    if (currentpassword && newpassword) {
+      const validPassword = await bcrypt.compare(currentpassword, user.password)
+      if (!validPassword) {
+        return res.status(400).send('Current password is incorrect')
+      }
+      const salt = await bcrypt.genSalt(10)
+      const hashedPassword = await bcrypt.hash(newpassword, salt)
+      user.password = hashedPassword
+    }
+    await user.save()
+
+    // Return the updated user object without the password
+    const userObj = user.toObject()
+    delete userObj.password
+
+    res.send(userObj)
+  } catch (error) {
+    return res.status(400).send(error.message)
   }
 })
 module.exports = router
