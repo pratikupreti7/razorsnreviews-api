@@ -53,15 +53,18 @@ router.post('/register', async (req, res) => {
     /*
      ************* Create a new User **********************
      */
+
     const user = new User({
       name: req.body.name,
-      email: req.body.email,
+      email: email,
       password: hashedPassword,
       pic: req.body.pic || undefined,
     })
+
     /*
      ************* Save new User **********************
      */
+    await user.save()
     const token = jwt.sign({ _id: user._id }, process.env.TOKEN_SECRET)
     // Convert user document to a plain JavaScript object
     let userObj = user.toObject()
@@ -93,18 +96,13 @@ router.post('/login', async (req, res) => {
     /*
      ************* Check if User already exists **********************
      */
-    const user = await User.findOne({ email: req.body.email })
+    const user = await User.findOne({ email: req.body.email.toLowerCase() })
 
-    if (!user) {
-      return res.status(400).send('Email or password does not match')
-    }
-    /*
-     ************* Check for password  **********************
-     */
     const validPassword = await bcrypt.compare(req.body.password, user.password)
     if (!validPassword) {
       return res.status(400).send('Email or password does not match')
     }
+
     /*
      ************* Sucess Everthing works then  **********************
      */
@@ -113,6 +111,7 @@ router.post('/login', async (req, res) => {
      *************  Create and Assign a token  **********************
      */
     const token = jwt.sign({ _id: user._id }, process.env.TOKEN_SECRET)
+    // const token = req.header('auth-token')
     // Convert user document to a plain JavaScript object
     let userObj = user.toObject()
 
@@ -122,7 +121,7 @@ router.post('/login', async (req, res) => {
     // Delete sensitive properties
     delete userObj.password
 
-    res.header('auth-token', token).send(userObj)
+    res.send(userObj)
   } catch (error) {
     return res
       .status(400)
@@ -149,11 +148,12 @@ router.post('/updatepic', verifyToken, async (req, res) => {
     // Update user's profile picture (pic) with the Cloudinary ID
     user.pic = cloudinaryId
     await user.save()
-    const token = jwt.sign({ _id: user._id }, process.env.TOKEN_SECRET)
 
     // Return the updated user object without the password
     const userObj = user.toObject()
     // Add token property to user object
+    // Retrieve the token from the request headers
+    const token = req.header('auth-token')
     userObj.token = token
 
     delete userObj.password
@@ -171,12 +171,16 @@ router.post('/updateinfo', verifyToken, async (req, res) => {
     // get user ID from the verified token
     const userIdfromToken = req.user._id
 
+    console.log('User ID from request body:', userId)
+    console.log('User ID from token:', userIdfromToken)
     if (userIdfromToken !== userId) {
       return res.status(400).send('Forbidden request')
     }
 
     // Fetch the user by userId
     const user = await User.findById(userId)
+
+    console.log('User from database:', user)
 
     if (!user) {
       return res.status(404).send('User not found')
@@ -188,13 +192,17 @@ router.post('/updateinfo', verifyToken, async (req, res) => {
     }
     // Only update email and password if provided
     if (email) {
-      // Check if email is already in use by another user
-      const existingUser = await User.findOne({ email, _id: { $ne: userId } })
+      const emailLower = email.toLowerCase() // Convert to lowercase
+      const existingUser = await User.findOne({
+        email: emailLower,
+        _id: { $ne: userId },
+      })
       if (existingUser) {
         return res.status(400).send('Email is already in use')
       }
-      user.email = email
+      user.email = emailLower // Use the lowercase email
     }
+
     if (currentpassword && newpassword) {
       const validPassword = await bcrypt.compare(currentpassword, user.password)
       if (!validPassword) {
@@ -205,7 +213,7 @@ router.post('/updateinfo', verifyToken, async (req, res) => {
       user.password = hashedPassword
     }
     await user.save()
-    const token = jwt.sign({ _id: user._id }, process.env.TOKEN_SECRET)
+    const token = req.header('auth-token')
 
     // Return the updated user object without the password
     const userObj = user.toObject()
