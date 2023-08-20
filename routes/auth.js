@@ -130,7 +130,7 @@ router.post('/login', async (req, res) => {
 })
 router.post('/updatepic', verifyToken, async (req, res) => {
   try {
-    const { userId, cloudinaryId } = req.body
+    const { userId, pic } = req.body
     // get user ID from the verified token
     const userIdfromToken = req.user._id
 
@@ -145,8 +145,9 @@ router.post('/updatepic', verifyToken, async (req, res) => {
       return res.status(404).send('User not found')
     }
 
-    // Update user's profile picture (pic) with the Cloudinary ID
-    user.pic = cloudinaryId
+    // Update user's profile picture (pic) 
+    user.pic = pic
+
     await user.save()
 
     // Return the updated user object without the password
