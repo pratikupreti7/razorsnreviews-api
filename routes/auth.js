@@ -131,6 +131,7 @@ router.post('/login', async (req, res) => {
 router.post('/updatepic', verifyToken, async (req, res) => {
   try {
     const { userId, pic } = req.body
+    
     // get user ID from the verified token
     const userIdfromToken = req.user._id
 
