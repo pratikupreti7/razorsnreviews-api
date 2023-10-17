@@ -98,6 +98,11 @@ router.post('/login', async (req, res) => {
      */
     const user = await User.findOne({ email: req.body.email.toLowerCase() })
 
+     if (!user) {
+      // User with the specified email does not exist
+      return res.status(400).send('Email or password does not match')
+    }
+
     const validPassword = await bcrypt.compare(req.body.password, user.password)
     if (!validPassword) {
       return res.status(400).send('Email or password does not match')
