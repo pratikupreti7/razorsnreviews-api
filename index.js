@@ -38,6 +38,7 @@ const corsOptions = [
   'https://razorsnreviews.onrender.com',
   'https://razorsnreview.onrender.com',
   'http://localhost:3000',
+  'http://localhost:3001',
   'http://localhost:3003',
 ] // Replace this with your frontend URL
 
